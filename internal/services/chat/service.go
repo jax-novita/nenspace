@@ -29,13 +29,12 @@ func NewChatService(chatClient ai.ChatAIClient, attachmentService *AttachmentSer
 	}
 }
 
-// getOpenRouterAPIKey fetches the user's active OpenRouter API key from the api_keys collection.
+// getActiveAPIKey fetches the user's active API key for the given service from the api_keys collection.
 // Returns an error if no valid key is found or if all keys are expired.
-func getOpenRouterAPIKey(userID string) (string, error) {
-	// Try to fetch user's active OpenRouter API key
+func getActiveAPIKey(userID string, service string) (string, error) {
 	apiKeys, err := query.FindAllByFilter[*models.ApiKey](map[string]interface{}{
 		"user":      userID,
-		"service":   "openrouter",
+		"service":   service,
 		"is_active": true,
 	})
 	if err != nil {
@@ -43,7 +42,7 @@ func getOpenRouterAPIKey(userID string) (string, error) {
 	}
 
 	if len(apiKeys) == 0 {
-		return "", fmt.Errorf("no OpenRouter API key found for user. Please configure your API key in the frontend")
+		return "", fmt.Errorf("no %s API key found for user", service)
 	}
 
 	// Use the first active key (prefer non-expired keys if available)
@@ -63,19 +62,23 @@ func getOpenRouterAPIKey(userID string) (string, error) {
 
 	// Check if key is expired
 	if !selectedKey.Expires.IsZero() && selectedKey.Expires.Time().Before(time.Now()) {
-		return "", fmt.Errorf("user's OpenRouter API key is expired. Please update your API key in the frontend (keyId: %s)", selectedKey.Id)
+		return "", fmt.Errorf("user's %s API key is expired. Please update your API key in the frontend (keyId: %s)", service, selectedKey.Id)
 	}
 
-	logger.LogInfo("Using user's OpenRouter API key", "userId", userID, "keyId", selectedKey.Id, "keyName", selectedKey.Name)
+	logger.LogInfo(fmt.Sprintf("Using user's %s API key", service), "userId", userID, "keyId", selectedKey.Id, "keyName", selectedKey.Name)
 	return selectedKey.Key, nil
 }
 
 // getChatClientForUser returns a ChatAIClient for the given user.
-// Creates a new OpenRouter client using the user's API key from the collection.
+// Prefers an active Novita key, falling back to OpenRouter for existing users.
 func (s *ChatService) getChatClientForUser(userID string) (ai.ChatAIClient, error) {
-	apiKey, err := getOpenRouterAPIKey(userID)
+	if apiKey, err := getActiveAPIKey(userID, "novita"); err == nil {
+		return ai.NewNovitaClient(apiKey), nil
+	}
+
+	apiKey, err := getActiveAPIKey(userID, "openrouter")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get OpenRouter API key: %w", err)
+		return nil, fmt.Errorf("failed to get API key: no active Novita or OpenRouter key found. Please configure your API key in the frontend")
 	}
 
 	return ai.NewOpenRouterClient(apiKey), nil

@@ -126,6 +126,7 @@ export const ENVIRONMENTS = [
 ] as const;
 
 export const SERVICES = [
+	{ value: 'novita', label: 'Novita' },
 	{ value: 'openrouter', label: 'OpenRouter' },
 	{ value: 'openai', label: 'OpenAI' },
 	{ value: 'github', label: 'GitHub' },

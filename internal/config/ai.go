@@ -7,16 +7,18 @@ import (
 const (
 	AIServiceOpenAI = "openai"
 	AIServiceClaude = "claude"
+	AIServiceNovita = "novita"
 	AIServiceNone   = "none"
-	
+
 	EnvAIService         = "AI_SERVICE"
 	EnvAIAPIKey          = "AI_API_KEY"
 	EnvAIModel           = "AI_MODEL"
 	EnvAIAnthropicAPIKey = "AI_ANTHROPIC_API_KEY"
-	
+
 	DefaultAIService = AIServiceNone
 	DefaultOpenAIModel = "gpt-3.5-turbo"
 	DefaultClaudeModel = "claude-3-sonnet-20240229"
+	DefaultNovitaModel = "deepseek/deepseek-v3-0324"
 )
 
 type AIConfig struct {
@@ -50,6 +52,8 @@ func GetAIConfig() AIConfig {
 		switch service {
 		case AIServiceClaude:
 			model = DefaultClaudeModel
+		case AIServiceNovita:
+			model = DefaultNovitaModel
 		default:
 			model = DefaultOpenAIModel
 		}

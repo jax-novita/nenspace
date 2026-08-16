@@ -16,7 +16,14 @@ func NewAIClient(cfg config.AIConfig) (AIClient, error) {
 		}
 		logger.LogInfo(fmt.Sprintf("Initializing OpenAI client with model: %s", cfg.Model))
 		return NewOpenAIClient(cfg.APIKey, cfg.Model), nil
-	
+
+	case config.AIServiceNovita:
+		if cfg.APIKey == "" {
+			return nil, fmt.Errorf("Novita API key is required")
+		}
+		logger.LogInfo(fmt.Sprintf("Initializing Novita client with model: %s", cfg.Model))
+		return NewNovitaClient(cfg.APIKey), nil
+
 	case config.AIServiceClaude:
 		if cfg.AnthropicKey == "" {
 			return nil, fmt.Errorf("Anthropic API key is required for Claude")
