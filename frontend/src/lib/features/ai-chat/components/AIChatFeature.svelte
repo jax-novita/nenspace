@@ -59,7 +59,7 @@
     async function checkOpenRouterKey() {
         try {
             const apiKeys = await CredentialsService.getApiKeys();
-            hasOpenRouterKey = apiKeys.some(key => key.service === 'openrouter' && key.is_active);
+            hasOpenRouterKey = apiKeys.some(key => (key.service === 'openrouter' || key.service === 'novita') && key.is_active);
         } catch (error) {
             console.error('Failed to check API keys:', error);
             hasOpenRouterKey = false;

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/shashank-sharma/backend/internal/config"
 	"github.com/shashank-sharma/backend/internal/logger"
 )
 
@@ -61,7 +62,7 @@ func (c *NovitaClient) Summarize(ctx context.Context, req *SummarizeRequest) (*S
 		Messages: []ChatMessage{
 			{Role: "user", Content: prompt},
 		},
-		Model:       "deepseek/deepseek-v3-0324",
+		Model:       config.DefaultNovitaModel,
 		MaxTokens:   int(float64(maxLength) * 0.5),
 		Temperature: 0.3,
 		Stream:      false,
@@ -95,7 +96,7 @@ func (c *NovitaClient) SuggestTags(ctx context.Context, req *TagRequest) (*TagRe
 		Messages: []ChatMessage{
 			{Role: "user", Content: prompt},
 		},
-		Model:       "deepseek/deepseek-v3-0324",
+		Model:       config.DefaultNovitaModel,
 		Temperature: 0.3,
 		Stream:      false,
 	}
@@ -130,7 +131,7 @@ func (c *NovitaClient) ClassifyContent(ctx context.Context, req *ClassifyRequest
 		Messages: []ChatMessage{
 			{Role: "user", Content: prompt},
 		},
-		Model:       "deepseek/deepseek-v3-0324",
+		Model:       config.DefaultNovitaModel,
 		Temperature: 0.3,
 		Stream:      false,
 	}
@@ -159,7 +160,7 @@ func (c *NovitaClient) RecommendContent(ctx context.Context, req *RecommendReque
 		Messages: []ChatMessage{
 			{Role: "user", Content: prompt},
 		},
-		Model:       "deepseek/deepseek-v3-0324",
+		Model:       config.DefaultNovitaModel,
 		Temperature: 0.3,
 		Stream:      false,
 	}

@@ -18,7 +18,9 @@ const (
 	DefaultAIService = AIServiceNone
 	DefaultOpenAIModel = "gpt-3.5-turbo"
 	DefaultClaudeModel = "claude-3-sonnet-20240229"
-	DefaultNovitaModel = "deepseek/deepseek-v3-0324"
+	// DefaultNovitaModel must stay in sync with the current flagship on
+	// https://api.novita.ai/openai/v1/models (checked via code-integration-gates/scripts/current_models.py).
+	DefaultNovitaModel = "deepseek/deepseek-v4-pro-0813"
 )
 
 type AIConfig struct {
