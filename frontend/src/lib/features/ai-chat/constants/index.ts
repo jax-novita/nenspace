@@ -1,4 +1,6 @@
 export const DEFAULT_MODEL = 'openai/gpt-3.5-turbo';
+// Must stay in sync with config.DefaultNovitaModel in internal/config/ai.go.
+export const DEFAULT_NOVITA_MODEL = 'deepseek/deepseek-v4-pro-0813';
 
 export const CONVERSATIONS_PAGE_SIZE = 20;
 export const MESSAGES_PAGE_SIZE = 50;

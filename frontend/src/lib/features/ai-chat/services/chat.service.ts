@@ -2,9 +2,25 @@ import { pb } from '$lib/config/pocketbase';
 import type { Conversation, ChatMessage, ConversationFilter, ModelInfo, ModelPreset, ChatSettings } from '../types';
 import { NetworkService } from '$lib/services/network.service.svelte';
 import { FilterBuilder } from '$lib/utils';
-import { CONVERSATIONS_PAGE_SIZE, MESSAGES_PAGE_SIZE, DEFAULT_MODEL } from '../constants';
+import { CONVERSATIONS_PAGE_SIZE, MESSAGES_PAGE_SIZE, DEFAULT_MODEL, DEFAULT_NOVITA_MODEL } from '../constants';
 import type { PromptInputMessage } from '$lib/components/ai-elements/prompt-input';
 import type { ChatAttachmentMetadata } from './chat-attachment.service';
+import { CredentialsService } from '$lib/features/credentials/services/credentials.service';
+
+// Mirrors ChatService.getChatClientForUser's provider preference on the backend
+// (internal/services/chat/service.go): Novita first, then OpenRouter.
+async function resolveDefaultModel(): Promise<string> {
+    try {
+        const apiKeys = await CredentialsService.getApiKeys();
+        const hasActive = (service: string) => apiKeys.some(key => key.service === service && key.is_active);
+        if (hasActive('novita')) {
+            return DEFAULT_NOVITA_MODEL;
+        }
+    } catch (error) {
+        console.error('Failed to resolve default model from active API keys:', error);
+    }
+    return DEFAULT_MODEL;
+}
 
 export class ChatService {
     static async fetchConversations(filter?: ConversationFilter, page = 1, perPage = CONVERSATIONS_PAGE_SIZE): Promise<{ items: Conversation[]; totalItems: number; totalPages: number }> {
@@ -74,7 +90,7 @@ export class ChatService {
         const conversationData = {
             user: userId,
             title: data.title || 'New Conversation',
-            model: data.model || DEFAULT_MODEL,
+            model: data.model || await resolveDefaultModel(),
             system_prompt: data.system_prompt || '',
             settings: data.settings || {},
             is_favorite: false,

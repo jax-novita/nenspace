@@ -11,6 +11,7 @@ import (
 
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/router"
+	"github.com/shashank-sharma/backend/internal/config"
 	"github.com/shashank-sharma/backend/internal/logger"
 	"github.com/shashank-sharma/backend/internal/services/ai"
 	"github.com/shashank-sharma/backend/internal/services/chat"
@@ -99,6 +100,22 @@ func ChatListModelsHandler(chatService *chat.ChatService, e *core.RequestEvent) 
 	})
 }
 
+// defaultModelForUser picks a model default matching the user's active provider,
+// so a Novita-only user doesn't get an OpenRouter-only model that Novita can't serve.
+func defaultModelForUser(chatService *chat.ChatService, userID string) string {
+	chatClient, err := chatService.GetChatClientForUser(userID)
+	if err != nil {
+		return "openai/gpt-3.5-turbo"
+	}
+
+	switch chatClient.(type) {
+	case *ai.NovitaClient:
+		return config.DefaultNovitaModel
+	default:
+		return "openai/gpt-3.5-turbo"
+	}
+}
+
 // ChatCreateConversationHandler creates a new conversation
 func ChatCreateConversationHandler(chatService *chat.ChatService, e *core.RequestEvent) error {
 	token := extractTokenFromHeader(e)
@@ -119,7 +136,7 @@ func ChatCreateConversationHandler(chatService *chat.ChatService, e *core.Reques
 
 	model, ok := requestData["model"].(string)
 	if !ok || model == "" {
-		model = "openai/gpt-3.5-turbo"
+		model = defaultModelForUser(chatService, userID)
 	}
 
 	systemPrompt, _ := requestData["system_prompt"].(string)

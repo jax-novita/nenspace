@@ -19,7 +19,7 @@
     import { onMount, onDestroy } from 'svelte';
     import { page } from '$app/stores';
     import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
-    import { DEFAULT_MODEL, CONVERSATION_STARTERS } from '../constants';
+    import { DEFAULT_MODEL, DEFAULT_NOVITA_MODEL, CONVERSATION_STARTERS } from '../constants';
     import { toast } from 'svelte-sonner';
     import { Conversation as ConversationContainer, ConversationContent, ConversationScrollButton } from '$lib/components/ai-elements/conversation';
     import type { PromptInputMessage } from '$lib/components/ai-elements/prompt-input';
@@ -37,12 +37,13 @@
     } from '$lib/components/ai-elements/model-selector';
     import { groupModelsByProvider } from '../utils/model.util';
 
-    let selectedModel = $state<string>(DEFAULT_MODEL);
+    let selectedModel = $state<string>("");
     let models = $state<ModelInfo[]>([]);
     let conversationFilter = $state<ConversationFilter>({});
     let showExportDialog = $state(false);
     let showModelSelector = $state(false);
     let hasOpenRouterKey = $state<boolean | null>(null);
+    let activeKeyService = $state<'novita' | 'openrouter' | null>(null);
     let isLoadingKeyCheck = $state(true);
     let isLoadingModels = $state(false);
 
@@ -59,10 +60,20 @@
     async function checkOpenRouterKey() {
         try {
             const apiKeys = await CredentialsService.getApiKeys();
-            hasOpenRouterKey = apiKeys.some(key => (key.service === 'openrouter' || key.service === 'novita') && key.is_active);
+            // Mirror the backend's provider preference (getChatClientForUser): Novita first, then OpenRouter.
+            const hasActive = (service: string) => apiKeys.some(key => key.service === service && key.is_active);
+            if (hasActive('novita')) {
+                activeKeyService = 'novita';
+            } else if (hasActive('openrouter')) {
+                activeKeyService = 'openrouter';
+            } else {
+                activeKeyService = null;
+            }
+            hasOpenRouterKey = activeKeyService !== null;
         } catch (error) {
             console.error('Failed to check API keys:', error);
             hasOpenRouterKey = false;
+            activeKeyService = null;
         } finally {
             isLoadingKeyCheck = false;
         }
@@ -104,6 +115,10 @@
         chatStore.reset();
     });
 
+    function fallbackDefaultModel(): string {
+        return activeKeyService === 'novita' ? DEFAULT_NOVITA_MODEL : DEFAULT_MODEL;
+    }
+
     async function loadModels() {
         if (isLoadingModels) return;
 
@@ -117,15 +132,16 @@
         } catch (error) {
             console.error('Failed to load models:', error);
             if (models.length === 0) {
+                const fallbackModel = fallbackDefaultModel();
                 const defaultModel: ModelInfo = {
-                    id: DEFAULT_MODEL,
+                    id: fallbackModel,
                     name: 'Default Model',
-                    provider: 'openai',
+                    provider: activeKeyService === 'novita' ? 'novita' : 'openai',
                     supports_streaming: true,
                     supports_tools: false,
                 };
                 models = [defaultModel];
-                selectedModel = DEFAULT_MODEL;
+                selectedModel = fallbackModel;
             }
         } finally {
             isLoadingModels = false;
