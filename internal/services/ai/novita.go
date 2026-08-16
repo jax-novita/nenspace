@@ -247,16 +247,16 @@ func (c *NovitaClient) streamChat(ctx context.Context, req *ChatRequest, ch chan
 		messages[i] = messageMap
 	}
 
-	payload := map[string]interface{}{
-		"model":    req.Model,
-		"messages": messages,
-		"stream":   true,
-	}
-
 	if req.SystemPrompt != "" {
 		messages = append([]map[string]interface{}{
 			{"role": "system", "content": req.SystemPrompt},
 		}, messages...)
+	}
+
+	payload := map[string]interface{}{
+		"model":    req.Model,
+		"messages": messages,
+		"stream":   true,
 	}
 
 	if req.Temperature > 0 {
